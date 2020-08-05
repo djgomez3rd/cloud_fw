@@ -67,12 +67,36 @@
       startButton.onclick = function(e){
         run();
       }
-      var color_wheel_svg = document.getElementById("colorwheelsvg").getSVGDocument()
-      var testColorSegment = color_wheel_svg.getElementById("id5");
-      testColorSegment.onclick = function(e){
-        document.getElementById("test_text").style.color = "red";
-        alert("onclick Event triggered!");
+      //Get the document (DOM?) of the svg
+      var color_wheel_svg = document.getElementById("colorwheelsvg").getSVGDocument();
+      //collect all the wheel color segments by class
+      var color_segments = color_wheel_svg.getElementsByClassName("com.sun.star.drawing.EllipseShape");
+      //convert the output to an array
+      //remove first and last elements, they are not color segments
+      var color_segment_array = Object.values(color_segments).slice(1,-1);
+      //add the onClick listener to each color segment
+      color_segment_array.forEach(addClickEvent);
+
+      var colorChange = function(e){
+        var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
+        document.getElementById("test_text").style.color = cmd_color;
       }
+
+      function addClickEvent(value){
+        //value.onclick = function(e)
+        //to enable color change on draging with smartphone
+        value.addEventListener('touchmove', function(e){
+          e.preventDefault(); //stops scrolling but might also break stuff
+          var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
+          document.getElementById("test_text").style.color = cmd_color;
+        });
+
+        //to enable clicking on computer broswer
+        value.addEventListener('click', function(e){
+          var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
+          document.getElementById("test_text").style.color = cmd_color;
+        });
+      };
 
       // Example with 10K thermistor
       //function calcThermistor(v) {

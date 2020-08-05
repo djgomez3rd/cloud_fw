@@ -45,7 +45,7 @@ const char* ap_network = "Magic Cloud";
 
 const char* ssid = "beasts";
 const char* password = "chonkyboi";
-const char* host = "esp32fs";
+const char* host = "cloud";
 WebServer server(80);
 //holds the current upload
 File fsUploadFile;
