@@ -26,6 +26,7 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
+#include <ArduinoJson.h>
 
 #define FILESYSTEM SPIFFS
 // You only need to format the filesystem once
@@ -49,6 +50,16 @@ const char* host = "cloud";
 WebServer server(80);
 //holds the current upload
 File fsUploadFile;
+
+#include <FastLED.h>
+FASTLED_USING_NAMESPACE
+#define DATA_PIN    26
+#define LED_TYPE    WS2812B
+#define COLOR_ORDER GRB
+#define NUM_LEDS    64
+CRGB leds[NUM_LEDS];
+#define FRAMES_PER_SECOND  120
+
 
 //format bytes
 String formatBytes(size_t bytes) {
@@ -222,6 +233,36 @@ void handleFileList() {
   server.send(200, "text/json", output);
 }
 
+//update the lights color after an HTML POST with appropriate RGB colors
+void updateLights() {
+  // DBG_OUTPUT_PORT.println(leds[0][0]);
+  // DBG_OUTPUT_PORT.println(leds[0][1]);
+  // DBG_OUTPUT_PORT.println(leds[0][2]);
+  DBG_OUTPUT_PORT.println("Update Lights");
+  // DBG_OUTPUT_PORT.println(server.args());
+  if (server.args() == 0) {
+    return server.send(500, "text/plain", "BAD ARGS");
+  }
+  // DBG_OUTPUT_PORT.println(server.arg(0));
+  String post_data = server.arg(0);
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, post_data);
+  JsonObject postObj = doc.as<JsonObject>();
+  uint8_t red = doc["red"];
+  uint8_t green = doc["green"];
+  uint8_t blue = doc["blue"];
+  // DBG_OUTPUT_PORT.println(red);
+  // DBG_OUTPUT_PORT.println(green);
+  // DBG_OUTPUT_PORT.println(blue);
+  for(int i = 0; i < NUM_LEDS; i++) { //9948
+    leds[i] = CRGB(red, green, blue);
+  }
+  FastLED.show();
+  // DBG_OUTPUT_PORT.println(leds[0][0]);
+  // DBG_OUTPUT_PORT.println(leds[0][1]);
+  // DBG_OUTPUT_PORT.println(leds[0][2]);
+}
+
 void setup(void) {
   DBG_OUTPUT_PORT.begin(115200);
   DBG_OUTPUT_PORT.print("\n");
@@ -305,11 +346,24 @@ void setup(void) {
     server.send(200, "text/json", json);
     json = String();
   });
+
+  //update the lights
+  server.on("/lights", HTTP_POST, updateLights);
+
   server.begin();
   DBG_OUTPUT_PORT.println("HTTP server started");
 
+  //LED Init
+  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS);
+  for( int i = 0; i < NUM_LEDS; i++) { //9948
+    leds[i] = CRGB(0, 0, 100);
+  }
+  FastLED.show();
+  DBG_OUTPUT_PORT.println("LEDS Initialized");
 }
 
 void loop(void) {
   server.handleClient();
+  // FastLED.show();
+  // FastLED.delay(1000 / FRAMES_PER_SECOND);
 }

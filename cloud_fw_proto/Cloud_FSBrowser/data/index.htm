@@ -20,40 +20,15 @@
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8">
   <title>ESP Monitor</title>
-  <script type="text/javascript" src="graphs.js"></script>
+  <!-- <script type="text/javascript" src="graphs.js"></script> -->
   <script type="text/javascript">
-    var heap,temp,digi;
-    var reloadPeriod = 1000;
-    var running = false;
-
-    function loadValues(){
-      if(!running) return;
-      var xh = new XMLHttpRequest();
-      xh.onreadystatechange = function(){
-        if (xh.readyState == 4){
-          if(xh.status == 200) {
-            var res = JSON.parse(xh.responseText);
-            heap.add(res.heap);
-            temp.add(res.analog);
-            digi.add(res.gpio);
-            if(running) setTimeout(loadValues, reloadPeriod);
-          } else running = false;
-        }
-      };
-      xh.open("GET", "/all", true);
-      xh.send(null);
-    };
-
-    function run(){
-      if(!running){
-        running = true;
-        loadValues();
-      }
-    }
-
-    //send an XML HTTP POST request to update the color of the lights
-    // function updateLights(){
-    //   var xh = new XMLHttpRequest(); //create XMLHttp Object
+    // var heap,temp,digi;
+    // var reloadPeriod = 1000;
+    // var running = false;
+    //
+    // function loadValues(){
+    //   if(!running) return;
+    //   var xh = new XMLHttpRequest();
     //   xh.onreadystatechange = function(){
     //     if (xh.readyState == 4){
     //       if(xh.status == 200) {
@@ -65,26 +40,47 @@
     //       } else running = false;
     //     }
     //   };
-    //   xh.open("POST", "/lights", true);
+    //   xh.open("GET", "/all", true);
     //   xh.send(null);
     // };
+    //
+    // function run(){
+    //   if(!running){
+    //     running = true;
+    //     loadValues();
+    //   }
+    // };
+
+    //send an XML HTTP POST request to update the color of the lights
+    function updateLights(cmd_color){
+      //turn the color into a json
+      var patt = /(\d+)/g; //pattern to match (r,g,b)
+      var res = cmd_color.match(patt); //regex match
+      var color_obj = {"red":res[0],"green":res[1],"blue":res[2]};
+      var color_json = JSON.stringify(color_obj);
+
+      var xh = new XMLHttpRequest(); //create XMLHttp Object
+      xh.open("POST", "/lights", true);
+      xh.send(color_json);
+      console.log(color_json)
+    };
 
     function onBodyLoad(){
-      var refreshInput = document.getElementById("refresh-rate");
-      refreshInput.value = reloadPeriod;
-      refreshInput.onchange = function(e){
-        var value = parseInt(e.target.value);
-        reloadPeriod = (value > 0)?value:0;
-        e.target.value = reloadPeriod;
-      }
-      var stopButton = document.getElementById("stop-button");
-      stopButton.onclick = function(e){
-        running = false;
-      }
-      var startButton = document.getElementById("start-button");
-      startButton.onclick = function(e){
-        run();
-      }
+      // var refreshInput = document.getElementById("refresh-rate");
+      // refreshInput.value = reloadPeriod;
+      // refreshInput.onchange = function(e){
+      //   var value = parseInt(e.target.value);
+      //   reloadPeriod = (value > 0)?value:0;
+      //   e.target.value = reloadPeriod;
+      // };
+      // var stopButton = document.getElementById("stop-button");
+      // stopButton.onclick = function(e){
+      //   running = false;
+      // };
+      // var startButton = document.getElementById("start-button");
+      // startButton.onclick = function(e){
+      //   run();
+      // };
       //Get the document (DOM?) of the svg
       var color_wheel_svg = document.getElementById("colorwheelsvg").getSVGDocument();
       //collect all the wheel color segments by class
@@ -98,21 +94,24 @@
       var colorChange = function(e){
         var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
         document.getElementById("test_text").style.color = cmd_color;
-      }
+      };
 
       function addClickEvent(value){
         //value.onclick = function(e)
         //to enable color change on draging with smartphone
-        value.addEventListener('touchmove', function(e){
-          e.preventDefault(); //stops scrolling but might also break stuff
-          var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
-          document.getElementById("test_text").style.color = cmd_color;
-        }, false);
+        // value.addEventListener('touchmove', function(e){
+        //   //e.preventDefault(); //stops scrolling but might also break stuff
+        //   var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
+        //   document.getElementById("test_text").style.color = cmd_color;
+        //   updateLights(cmd_color);
+        // }, false);
 
         //to enable clicking on computer broswer
         value.addEventListener('click', function(e){
+          e.preventDefault();
           var cmd_color = value.getElementsByTagName("path")[0].getAttribute("fill");
           document.getElementById("test_text").style.color = cmd_color;
+          updateLights(cmd_color);
         }, false);
       };
 
@@ -124,15 +123,15 @@
       //}
       //temp = createGraph(document.getElementById("analog"), "Temperature", 100, 128, 10, 40, false, "cyan", calcThermistor);
 
-      temp = createGraph(document.getElementById("analog"), "Analog Input", 100, 128, 0, 1023, false, "cyan");
-      heap = createGraph(document.getElementById("heap"), "Current Heap", 100, 125, 0, 30000, true, "orange");
-      digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
-      run();
+      // temp = createGraph(document.getElementById("analog"), "Analog Input", 100, 128, 0, 1023, false, "cyan");
+      // heap = createGraph(document.getElementById("heap"), "Current Heap", 100, 125, 0, 30000, true, "orange");
+      // digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
+      // run();
     }
   </script>
 </head>
 <body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
-  <div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; width: 362px; background-color: rgb(238, 238, 238);">
+  <!-- <div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; width: 362px; background-color: rgb(238, 238, 238);">
     <label>Period (ms):</label>
     <input type="number" id="refresh-rate"/>
     <input type="button" id="start-button" value="Start"/>
@@ -140,9 +139,9 @@
   </div>
   <div id="heap"></div>
   <div id="analog"></div>
-  <div id="digital"></div>
+  <div id="digital"></div> -->
   <div id="colorwheel">
-    <object id="colorwheelsvg" type="image/svg+xml" data="RGB_color_wheel_72.svg"></object>
+    <object id="colorwheelsvg" style="display: block; width: 362px;" type="image/svg+xml" data="RGB_color_wheel_72.svg"></object>
   </div>
   <div>
     <p id="test_text">what in the poop</p>
